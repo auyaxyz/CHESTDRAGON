@@ -1,98 +1,37 @@
 function thisCode()
     repeat task.wait() until game:IsLoaded()
-    local PlaceID = game.PlaceId
-    local AllIDs = {}
-    local foundAnything = ""
-    local actualHour = os.date("!*t").hour
-    local Deleted = false
-    local HttpService = game:GetService('HttpService')
-    local TeleportService = game:GetService("TeleportService")
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
 
-    local File = pcall(function()
-        AllIDs = HttpService:JSONDecode(readfile("NotSameServers.json"))
-    end)
-    if not File then
-        table.insert(AllIDs, actualHour)
-        writefile("NotSameServers.json", HttpService:JSONEncode(AllIDs))
+    local function log(text)
+        print("[DEBUG]: " .. tostring(text))
     end
 
-    function TPReturner()
-        local Site
-        if foundAnything == "" then
-            Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
-        else
-            Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
-        end
-
-        if Site.nextPageCursor then
-            foundAnything = Site.nextPageCursor
-        end
-
-        for _, v in pairs(Site.data) do
-            if tonumber(v.maxPlayers) > tonumber(v.playing) then
-                local serverID = tostring(v.id)
-                if not table.find(AllIDs, serverID) then
-                    table.insert(AllIDs, serverID)
-                    writefile("NotSameServers.json", HttpService:JSONEncode(AllIDs))
-                    TeleportService:TeleportToPlaceInstance(PlaceID, serverID, LocalPlayer)
-                    wait(4)
-                end
-            end
-        end
-    end
-
-    function Teleport()
-        while wait() do
-            pcall(function()
-                TPReturner()
-                if foundAnything ~= "" then
-                    TPReturner()
-                end
-            end)
-        end
-    end
-
-    local AllowRunService = true
-    local AllowRunServiceBind = Instance.new("BindableFunction")
-    function AllowRunServiceBind.OnInvoke(args)
-        AllowRunService = args == "Enable"
-    end
-
-    local StarterGui = game:GetService("StarterGui")
-    StarterGui:SetCore("SendNotification", {
-        Title = "Farm Chest Dragon Blox Fruits",
-        Text = "Script By SirenStore",
-        Duration = math.huge,
-        Callback = AllowRunServiceBind,
-        Button1 = "Enable",
-        Button2 = "Disable",
-    })
-
+    -- Fungsi untuk mencari dan menyentuh chest
     task.spawn(function()
-        while AllowRunService do
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                -- Cari chest di workspace
-                local Chest = game.Workspace:FindFirstChild("Chest4") 
-                    or game.Workspace:FindFirstChild("Chest3") 
-                    or game.Workspace:FindFirstChild("Chest2") 
-                    or game.Workspace:FindFirstChild("Chest")
-                
-                if Chest and Chest:IsA("BasePart") then
-                    -- Pindahkan karakter ke posisi chest
-                    LocalPlayer.Character:PivotTo(Chest:GetPivot())
-                    task.wait(0.2) -- Tunggu agar karakter benar-benar sampai
-                    
-                    -- Simulasikan sentuhan pada chest
+        while true do
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local foundChest = nil
+                for _, obj in pairs(game.Workspace:GetDescendants()) do
+                    if obj:IsA("BasePart") and obj.Name:lower():find("chest") then
+                        foundChest = obj
+                        break
+                    end
+                end
+
+                if foundChest then
+                    log("Chest ditemukan: " .. foundChest.Name)
+                    -- Pindahkan ke posisi chest
+                    LocalPlayer.Character:PivotTo(foundChest:GetPivot())
+                    task.wait(0.5) -- Tunggu agar posisi karakter stabil
+                    -- Sentuh chest
                     pcall(function()
-                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, Chest, 0) -- Sentuhan dimulai
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, foundChest, 0)
                         task.wait(0.1)
-                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, Chest, 1) -- Sentuhan selesai
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, foundChest, 1)
                     end)
                 else
-                    -- Jika chest tidak ditemukan, teleport ke server lain
-                    Teleport()
+                    log("Chest tidak ditemukan di server ini.")
                 end
             end
             task.wait(1)
