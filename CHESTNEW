@@ -1,5 +1,6 @@
 function thisCode()
     repeat task.wait() until game:IsLoaded()
+    
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
     local HttpService = game:GetService("HttpService")
@@ -18,74 +19,37 @@ function thisCode()
         writefile("NotSameServers.json", HttpService:JSONEncode(AllIDs))
     end
 
-    -- Fungsi teleportasi antar server
-    function TPReturner()
-        local Site
-        if foundAnything == "" then
-            Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
-        else
-            Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
-        end
-        if Site.nextPageCursor then
-            foundAnything = Site.nextPageCursor
-        end
-
-        for _, v in pairs(Site.data) do
-            local ID = tostring(v.id)
-            local Possible = true
-
-            if tonumber(v.maxPlayers) > tonumber(v.playing) then
-                for _, Existing in pairs(AllIDs) do
-                    if ID == tostring(Existing) then
-                        Possible = false
-                        break
-                    end
-                end
-
-                if Possible then
-                    table.insert(AllIDs, ID)
-                    writefile("NotSameServers.json", HttpService:JSONEncode(AllIDs))
-                    TeleportService:TeleportToPlaceInstance(PlaceID, ID, LocalPlayer)
-                    task.wait(4)
-                end
-            end
-        end
-    end
-
-    function Teleport()
-        while task.wait() do
-            pcall(function()
-                TPReturner()
-            end)
-        end
-    end
-
     -- Fungsi untuk mencari dan menyentuh chest
     task.spawn(function()
         while true do
+            -- Pastikan karakter ada
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                -- Cek keberadaan chest dalam urutan prioritas
                 local Chest = game.Workspace:FindFirstChild("Chest4")
                     or game.Workspace:FindFirstChild("Chest3")
                     or game.Workspace:FindFirstChild("Chest2")
                     or game.Workspace:FindFirstChild("Chest")
                 
+                -- Jika chest ditemukan
                 if Chest then
+                    -- Pastikan karakter mendekatkan diri ke chest
                     LocalPlayer.Character:PivotTo(Chest:GetPivot())
-                    task.wait(0.5) -- Tunggu agar posisi karakter stabil
+                    task.wait(0.5) -- Tunggu sebentar untuk stabilitas
                     pcall(function()
-                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, Chest, 0)
+                        -- Gunakan firetouchinterest untuk mensimulasikan interaksi
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, Chest, 0)  -- Menyentuh
                         task.wait(0.1)
-                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, Chest, 1)
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, Chest, 1)  -- Lepas sentuhan
                     end)
                 else
                     print("Chest tidak ditemukan di server ini.")
                 end
             end
-            task.wait(1)
+            task.wait(1)  -- Tunggu sejenak sebelum mencoba lagi
         end
     end)
 
-    -- Notifikasi untuk mengaktifkan/mematikan script
+    -- Fitur notifikasi untuk enable/disable script
     local AllowRunService = true
     local AllowRunServiceBind = Instance.new("BindableFunction")
     function AllowRunServiceBind.OnInvoke(args)
@@ -110,14 +74,16 @@ function thisCode()
     task.spawn(function()
         while true do
             if AllowRunService then
-                pcall(function()
-                    local hasChar = LocalPlayer.Character
-                    if hasChar and not hasChar:FindFirstChild("CrewBBG", true) then
-                        hasChar:FindFirstChild("CrewBBG", true):Destroy()
+                -- Pastikan karakter ada dan memulai interaksi dengan chest
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    -- Periksa apakah ada tag CrewBBG yang perlu dihapus
+                    local hasCrewTag = LocalPlayer.Character:FindFirstChild("CrewBBG", true)
+                    if hasCrewTag then
+                        hasCrewTag:Destroy()
                     end
-                end)
+                end
             end
-            task.wait(1)
+            task.wait(1) -- Tunggu sejenak sebelum melanjutkan
         end
     end)
 end
