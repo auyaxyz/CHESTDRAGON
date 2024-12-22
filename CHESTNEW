@@ -73,15 +73,25 @@ function thisCode()
     task.spawn(function()
         while AllowRunService do
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                -- Cari chest di workspace
                 local Chest = game.Workspace:FindFirstChild("Chest4") 
                     or game.Workspace:FindFirstChild("Chest3") 
                     or game.Workspace:FindFirstChild("Chest2") 
                     or game.Workspace:FindFirstChild("Chest")
                 
-                if Chest then
+                if Chest and Chest:IsA("BasePart") then
+                    -- Pindahkan karakter ke posisi chest
                     LocalPlayer.Character:PivotTo(Chest:GetPivot())
-                    firesignal(Chest.Touched, LocalPlayer.Character.HumanoidRootPart)
+                    task.wait(0.2) -- Tunggu agar karakter benar-benar sampai
+                    
+                    -- Simulasikan sentuhan pada chest
+                    pcall(function()
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, Chest, 0) -- Sentuhan dimulai
+                        task.wait(0.1)
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, Chest, 1) -- Sentuhan selesai
+                    end)
                 else
+                    -- Jika chest tidak ditemukan, teleport ke server lain
                     Teleport()
                 end
             end
